@@ -1,4 +1,4 @@
 # Skilo
-Sinclair's version of Kilo.
+(S)inclair's version of Kilo.
 
 Based on: https://viewsourcecode.org/snaptoken/kilo/
