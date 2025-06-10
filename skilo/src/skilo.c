@@ -10,9 +10,10 @@
 #include <string.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
-#include <termios.h>
 #include <time.h>
 #include <unistd.h>
+
+#include "term.h"
 
 #define SKILO_VERSION "0.0.1"
 #define KILO_TAB_STOP 4
@@ -53,41 +54,17 @@ struct editorConfig {
     char* filename;
     char statusmsg[80];
     time_t statusmsg_time;
-    struct termios orig_termios;
 };
 
 struct editorConfig E;
 
-// === Terminal ===
 void die(const char* s) {
-    write(STDOUT_FILENO, "\x1b[2J", 4);
-    write(STDOUT_FILENO, "\x1b[H", 3);
-
+    cleanup();
     perror(s);
     exit(1);
 }
 
-void disableRawMode() {
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.orig_termios) == -1)
-        die("tcsetattr");
-}
-
-void enableRawMode() {
-    if (tcgetattr(STDIN_FILENO, &E.orig_termios) == -1)
-        die("tcgetattr");
-
-    struct termios raw = E.orig_termios;
-    raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
-    raw.c_oflag &= ~(OPOST);
-    raw.c_cflag |= (CS8);
-    raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
-    raw.c_cc[VMIN] = 0;  // min bytes read() needs to return
-    raw.c_cc[VTIME] = 1; // max wait time before read() returns, 10th of sec
-
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw) == -1)
-        die("tcsetattr");
-}
-
+// === Terminal ===
 /*
  * Keeps reading from STDIN until we get a char.
  */
