@@ -1,18 +1,27 @@
 builddir = build
 objects = $(builddir)/term.o $(builddir)/skilo.o 
+CFLAGS = -Wall -Wextra -pedantic -std=c99
 
-skilo: build $(objects)
+# Tell make that prerequisites of these types can be found in src/
+vpath %.c src/
+vpath %.h src/
+
+# builddir is a "order-only" prerequisite. It's updated first if this target is
+# updated, but not used to determine if this target is out-of-date.
+skilo: $(objects) | $(builddir)
 	$(CC) -o build/skilo $(objects) 
 
-build:
+# Pattern rule
+$(objects): $(builddir)/%.o : %.c | $(builddir)
+	$(CC) $(CFLAGS) -c $< -o $@  # $< is first prereq, $@ is all targets
+
+# Append prerequisites
+skilo.o: term.h
+term.o: term.h
+
+$(builddir):
 	mkdir -p $(builddir)
 
-build/skilo.o: src/skilo.c
-	$(CC) -c src/skilo.c -o build/skilo.o -Wall -Wextra -pedantic -std=c99
-
-build/term.o: src/term.c
-	$(CC) -c src/term.c -o build/term.o -Wall -Wextra -pedantic -std=c99
-
-.PHONY: clean
+.PHONY: clean  # PHONY rules can't be mistaken for files.
 clean:
 	rm -rf $(builddir)
